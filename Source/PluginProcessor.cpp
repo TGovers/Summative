@@ -47,7 +47,7 @@ CFilterButterworth24db::CFilterButterworth24db(void)
     this->history4 = 0.f;
     
     this->SetSampleRate(44100.f);
-    this->Set(22050.f, 0.0);
+    this->Set(22050.0f, 0.0f);
 }
 
 CFilterButterworth24db::~CFilterButterworth24db(void)
@@ -229,7 +229,7 @@ void SummativeAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuff
             currentAngle += angleDelta; //currentAngle = currentAngle + angleDelta
             
             // creating/setting the wetData value
-            wetData[sample] = wetData[sample] * currentSinSample;
+            //wetData[sample] = wetData[sample] * currentSinSample;
             
             //wetData[sample] = currentSinSample;
             
@@ -238,25 +238,26 @@ void SummativeAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuff
             // hard clipping waveshaper
             // might not be needed for assessment having both, but thought that they sounded cool together so apologies if we only needed one or the other (hopefully its fine to do!)
             // I liked the values of -0.7 and 0.7, specifically when used with a synth sample with a high and low line/part
-            auto shapedSample = jlimit((float) -0.7, (float) 0.7, wetData[sample]);
+            // auto shapedSample = jlimit((float) -0.7, (float) 0.7, wetData[sample]);
             
             
             // Finalising the wetData for mix below
             //wetData[sample] = shapedSample;
             
             
-            // Running the Butterworth filter
-            // Seems to change it to change every 230 on the freq slider, almost like an auto tune?
-            CFilterButterworth24db Butter;
-            wetData[sample] = Butter.Run(shapedSample);
+            // Running the Butterworth filter, needs fixing
+            
+            CFilterButterworth24db butter;
+            butter.Set(5000.0f, 0.1f);
+            wetData[sample] = butter.Run(wetData[sample]);
             
             
-            
+            channelData[sample] = butter.Run(channelData[sample]);
             // implementing slider control
-            channelData[sample] = channelData[sample] * (1.0f - (mixLevel.getNextValue()*0.01f)) + ((wetData[sample] * mixLevel.getNextValue()) * 0.01f);
+            //channelData[sample] = channelData[sample] * (1.0f - (mixLevel.getNextValue()*0.01f)) + ((wetData[sample] * mixLevel.getNextValue()) * 0.01f);
             
             // lowering final gain
-            channelData[sample] = channelData[sample] * 0.4f;
+            //channelData[sample] = channelData[sample] * 0.4f;
         }
     }
 }
@@ -396,25 +397,7 @@ float CFilterButterworth24db::Run(float input)
     return output;
 }
 
-/*
-// Decimate code NOT USED YET
-int bits=16;
-float rate=0.5;
 
-long int m=1<<(bits-1);
-float y=0,cnt=0;
-
-float decimate(float i)
-{
-    cnt+=rate;
-    if (cnt>=1)
-    {
-        cnt-=1;
-        y=(long int)(i*m)/(float)m;
-    }
-    return y;
-}
-*/
 
 //==============================================================================
 // This creates new instances of the plugin..
